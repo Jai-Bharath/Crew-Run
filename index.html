@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CREW RUN — Choose Your Mission</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+/* ── RESET & ROOT ─────────────────────────────────── */
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --black:#020208;
+  --deep:#060612;
+  --cyan:#00d4ff;
+  --pink:#ff4d6d;
+  --gold:#ffd60a;
+  --purple:#a855f7;
+  --white:#e8f4ff;
+  --dim:#2a2a4a;
+}
+html,body{width:100%;height:100%;overflow:hidden;}
+body{
+  background:var(--black);
+  font-family:'Orbitron',monospace;
+  color:var(--white);
+  cursor:none;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+}
+
+/* ── CUSTOM CURSOR ─────────────────────────────────── */
+#cursor{
+  position:fixed;width:18px;height:18px;
+  border:2px solid var(--cyan);border-radius:50%;
+  pointer-events:none;z-index:9999;
+  transition:transform .12s,border-color .2s;
+  mix-blend-mode:difference;
+}
+#cursor-dot{
+  position:fixed;width:5px;height:5px;
+  background:var(--cyan);border-radius:50%;
+  pointer-events:none;z-index:9999;
+  transform:translate(-50%,-50%);
+  transition:background .2s;
+}
+body.hovering #cursor{transform:translate(-50%,-50%) scale(2.2);border-color:var(--gold);}
+body.hovering #cursor-dot{background:var(--gold);}
+
+/* ── STAR CANVAS ───────────────────────────────────── */
+#starfield{
+  position:fixed;inset:0;z-index:0;
+  pointer-events:none;
+}
+
+/* ── SCAN LINES ────────────────────────────────────── */
+body::after{
+  content:'';position:fixed;inset:0;
+  background:repeating-linear-gradient(
+    0deg,transparent,transparent 3px,
+    rgba(0,0,0,.07) 3px,rgba(0,0,0,.07) 4px
+  );
+  pointer-events:none;z-index:1000;
+}
+
+/* ── NEBULA BLOBS ──────────────────────────────────── */
+.nebula{
+  position:fixed;border-radius:50%;
+  filter:blur(80px);pointer-events:none;z-index:0;
+  animation:nebula-drift 18s ease-in-out infinite alternate;
+}
+.nebula-1{
+  width:600px;height:600px;
+  background:radial-gradient(circle,rgba(168,85,247,.12) 0%,transparent 70%);
+  top:-100px;left:-150px;
+  animation-delay:0s;
+}
+.nebula-2{
+  width:500px;height:500px;
+  background:radial-gradient(circle,rgba(0,212,255,.08) 0%,transparent 70%);
+  bottom:-80px;right:-100px;
+  animation-delay:-9s;
+}
+.nebula-3{
+  width:400px;height:400px;
+  background:radial-gradient(circle,rgba(255,77,109,.07) 0%,transparent 70%);
+  top:50%;left:50%;transform:translate(-50%,-50%);
+  animation-delay:-4s;
+}
+@keyframes nebula-drift{
+  0%{transform:translate(0,0) scale(1);}
+  100%{transform:translate(30px,20px) scale(1.1);}
+}
+
+/* ── MAIN WRAPPER ──────────────────────────────────── */
+#wrapper{
+  position:relative;z-index:10;
+  display:flex;flex-direction:column;
+  align-items:center;gap:0;
+  opacity:0;
+  animation:page-in 1s ease forwards;
+  animation-delay:.3s;
+}
+@keyframes page-in{
+  from{opacity:0;transform:translateY(30px);}
+  to{opacity:1;transform:translateY(0);}
+}
+
+/* ── LOGO HEADER ───────────────────────────────────── */
+#logo-wrap{
+  text-align:center;
+  margin-bottom:12px;
+}
+#logo-symbol{
+  font-size:42px;
+  display:block;
+  animation:symbol-float 3s ease-in-out infinite;
+  margin-bottom:4px;
+}
+@keyframes symbol-float{
+  0%,100%{transform:translateY(0);}
+  50%{transform:translateY(-8px);}
+}
+#logo-title{
+  font-size:clamp(36px,6vw,72px);
+  font-weight:900;
+  letter-spacing:14px;
+  background:linear-gradient(135deg,var(--cyan) 0%,var(--white) 45%,var(--purple) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;
+  filter:drop-shadow(0 0 30px rgba(0,212,255,.5));
+  animation:title-pulse 4s ease-in-out infinite;
+  line-height:1;
+}
+@keyframes title-pulse{
+  0%,100%{filter:drop-shadow(0 0 30px rgba(0,212,255,.5));}
+  50%{filter:drop-shadow(0 0 50px rgba(0,212,255,.9)) drop-shadow(0 0 80px rgba(168,85,247,.4));}
+}
+#logo-sub{
+  font-family:'Space Mono',monospace;
+  font-size:11px;letter-spacing:6px;
+  color:rgba(200,220,255,.4);
+  margin-top:10px;
+  text-transform:uppercase;
+}
+
+/* ── DIVIDER ───────────────────────────────────────── */
+.divider{
+  width:280px;height:1px;
+  background:linear-gradient(90deg,transparent,var(--cyan),transparent);
+  margin:28px 0;
+  position:relative;
+}
+.divider::before{
+  content:'✦';position:absolute;
+  top:50%;left:50%;transform:translate(-50%,-50%);
+  color:var(--cyan);font-size:12px;
+  background:var(--black);padding:0 10px;
+  animation:spin-slow 8s linear infinite;
+}
+@keyframes spin-slow{
+  from{transform:translate(-50%,-50%) rotate(0deg);}
+  to{transform:translate(-50%,-50%) rotate(360deg);}
+}
+
+/* ── CHOOSE LABEL ──────────────────────────────────── */
+#choose-label{
+  font-family:'Space Mono',monospace;
+  font-size:10px;letter-spacing:5px;
+  color:rgba(200,220,255,.4);
+  margin-bottom:32px;
+  text-transform:uppercase;
+  animation:blink-label 2.5s step-end infinite;
+}
+@keyframes blink-label{
+  0%,100%{opacity:1;}50%{opacity:.3;}
+}
+
+/* ── VERSION CARDS ─────────────────────────────────── */
+#cards{
+  display:flex;gap:28px;
+  perspective:1200px;
+}
+
+.card{
+  position:relative;
+  width:300px;
+  padding:36px 32px 32px;
+  border-radius:16px;
+  cursor:none;
+  background:rgba(6,6,18,.8);
+  border:1px solid rgba(255,255,255,.06);
+  backdrop-filter:blur(12px);
+  overflow:hidden;
+  transition:transform .4s cubic-bezier(.23,1,.32,1),
+             border-color .3s,box-shadow .3s;
+  text-decoration:none;color:inherit;
+  display:block;
+  animation:card-in .8s cubic-bezier(.23,1,.32,1) both;
+}
+.card:nth-child(1){animation-delay:.5s;}
+.card:nth-child(2){animation-delay:.7s;}
+@keyframes card-in{
+  from{opacity:0;transform:translateY(40px) rotateX(15deg);}
+  to{opacity:1;transform:translateY(0) rotateX(0);}
+}
+.card:hover{
+  transform:translateY(-10px) rotateX(4deg) scale(1.02);
+}
+.card-1:hover{
+  border-color:rgba(0,212,255,.5);
+  box-shadow:0 20px 60px rgba(0,212,255,.15),
+             0 0 0 1px rgba(0,212,255,.1),
+             inset 0 0 60px rgba(0,212,255,.03);
+}
+.card-2:hover{
+  border-color:rgba(255,77,109,.5);
+  box-shadow:0 20px 60px rgba(255,77,109,.15),
+             0 0 0 1px rgba(255,77,109,.1),
+             inset 0 0 60px rgba(255,77,109,.03);
+}
+
+/* Card glow sweep on hover */
+.card::before{
+  content:'';position:absolute;
+  top:-100%;left:-60%;
+  width:50%;height:300%;
+  background:linear-gradient(
+    105deg,transparent,rgba(255,255,255,.04),transparent
+  );
+  transition:left .5s ease;
+  pointer-events:none;
+}
+.card:hover::before{left:130%;}
+
+/* Version badge */
+.card-badge{
+  display:inline-flex;align-items:center;gap:8px;
+  font-size:9px;letter-spacing:4px;font-weight:700;
+  padding:4px 12px;border-radius:20px;
+  margin-bottom:20px;
+  text-transform:uppercase;
+  font-family:'Space Mono',monospace;
+}
+.card-1 .card-badge{
+  background:rgba(0,212,255,.1);
+  border:1px solid rgba(0,212,255,.3);
+  color:var(--cyan);
+}
+.card-2 .card-badge{
+  background:rgba(255,77,109,.1);
+  border:1px solid rgba(255,77,109,.3);
+  color:var(--pink);
+}
+.badge-dot{
+  width:6px;height:6px;border-radius:50%;
+  animation:badge-pulse 1.5s ease-in-out infinite;
+}
+.card-1 .badge-dot{background:var(--cyan);}
+.card-2 .badge-dot{background:var(--pink);}
+@keyframes badge-pulse{
+  0%,100%{opacity:1;transform:scale(1);}
+  50%{opacity:.5;transform:scale(.7);}
+}
+
+/* Card preview canvas area */
+.card-preview{
+  width:100%;height:90px;
+  border-radius:10px;
+  margin-bottom:22px;
+  position:relative;
+  overflow:hidden;
+  border:1px solid rgba(255,255,255,.05);
+  background:rgba(0,0,0,.4);
+}
+.card-preview canvas{display:block;width:100%;height:100%;}
+
+/* Card title */
+.card-title{
+  font-size:22px;font-weight:900;
+  letter-spacing:3px;
+  margin-bottom:8px;
+  line-height:1.1;
+}
+.card-1 .card-title{color:var(--cyan);}
+.card-2 .card-title{color:var(--pink);}
+
+/* Card description */
+.card-desc{
+  font-family:'Space Mono',monospace;
+  font-size:9.5px;
+  line-height:1.9;
+  color:rgba(200,220,255,.45);
+  letter-spacing:.5px;
+  margin-bottom:24px;
+}
+
+/* Feature list */
+.card-features{
+  list-style:none;
+  display:flex;flex-direction:column;gap:7px;
+  margin-bottom:28px;
+}
+.card-features li{
+  font-family:'Space Mono',monospace;
+  font-size:9px;letter-spacing:1px;
+  color:rgba(200,220,255,.6);
+  display:flex;align-items:center;gap:10px;
+}
+.card-features li::before{
+  content:'';
+  width:14px;height:1px;
+  flex-shrink:0;
+}
+.card-1 .card-features li::before{background:var(--cyan);}
+.card-2 .card-features li::before{background:var(--pink);}
+
+/* CTA Button */
+.card-btn{
+  width:100%;padding:14px;
+  border-radius:10px;
+  border:none;
+  font-family:'Orbitron',monospace;
+  font-size:11px;font-weight:700;
+  letter-spacing:3px;
+  text-transform:uppercase;
+  cursor:none;
+  position:relative;
+  overflow:hidden;
+  transition:transform .15s,box-shadow .2s;
+  display:block;text-align:center;
+}
+.card-1 .card-btn{
+  background:linear-gradient(135deg,rgba(0,212,255,.2),rgba(0,212,255,.08));
+  border:1px solid rgba(0,212,255,.4);
+  color:var(--cyan);
+  box-shadow:0 0 20px rgba(0,212,255,.1);
+}
+.card-2 .card-btn{
+  background:linear-gradient(135deg,rgba(255,77,109,.2),rgba(255,77,109,.08));
+  border:1px solid rgba(255,77,109,.4);
+  color:var(--pink);
+  box-shadow:0 0 20px rgba(255,77,109,.1);
+}
+.card:hover .card-btn{
+  transform:translateY(-1px);
+}
+.card-1:hover .card-btn{
+  box-shadow:0 0 30px rgba(0,212,255,.3),0 4px 20px rgba(0,212,255,.15);
+}
+.card-2:hover .card-btn{
+  box-shadow:0 0 30px rgba(255,77,109,.3),0 4px 20px rgba(255,77,109,.15);
+}
+/* Shimmer on button */
+.card-btn::after{
+  content:'';position:absolute;
+  top:0;left:-100%;width:100%;height:100%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.1),transparent);
+  animation:btn-shimmer 3s ease-in-out infinite;
+}
+.card-1 .card-btn::after{animation-delay:0s;}
+.card-2 .card-btn::after{animation-delay:1.5s;}
+@keyframes btn-shimmer{
+  0%{left:-100%;}40%,100%{left:200%;}
+}
+
+/* ── BOTTOM NAV ────────────────────────────────────── */
+#footer-nav{
+  margin-top:36px;
+  display:flex;gap:30px;align-items:center;
+  opacity:0;
+  animation:page-in .8s ease forwards;
+  animation-delay:1.2s;
+}
+.footer-link{
+  font-family:'Space Mono',monospace;
+  font-size:9px;letter-spacing:3px;
+  color:rgba(200,220,255,.25);
+  text-decoration:none;
+  text-transform:uppercase;
+  transition:color .2s;
+}
+.footer-link:hover{color:rgba(200,220,255,.6);}
+.footer-sep{color:rgba(200,220,255,.12);font-size:10px;}
+
+/* ── TRANSITION OVERLAY ────────────────────────────── */
+#transition{
+  position:fixed;inset:0;
+  background:var(--black);
+  z-index:9000;
+  pointer-events:none;
+  opacity:0;
+}
+#transition.active{
+  pointer-events:all;
+  animation:transition-in .55s cubic-bezier(.76,0,.24,1) forwards;
+}
+@keyframes transition-in{
+  0%{opacity:0;clip-path:circle(0% at var(--tx,50%) var(--ty,50%));}
+  100%{opacity:1;clip-path:circle(150% at var(--tx,50%) var(--ty,50%));}
+}
+
+/* ── PARTICLE BURST ────────────────────────────────── */
+.burst{
+  position:fixed;pointer-events:none;z-index:8999;
+}
+
+/* ── RESPONSIVE ────────────────────────────────────── */
+@media(max-width:680px){
+  #cards{flex-direction:column;gap:16px;}
+  .card{width:90vw;max-width:340px;}
+  body::after{display:none;}
+}
+</style>
+</head>
+<body>
+
+<div id="cursor"></div>
+<div id="cursor-dot"></div>
+<div id="transition"></div>
+
+<canvas id="starfield"></canvas>
+<div class="nebula nebula-1"></div>
+<div class="nebula nebula-2"></div>
+<div class="nebula nebula-3"></div>
+
+<div id="wrapper">
+  <div id="logo-wrap">
+    <span id="logo-symbol">🚀</span>
+    <div id="logo-title">CREW RUN</div>
+    <div id="logo-sub">Space Endless Runner · Among Us × Chrome Dino</div>
+  </div>
+
+  <div class="divider"></div>
+  <div id="choose-label">— Select Your Mission —</div>
+
+  <div id="cards">
+
+    <!-- V1 -->
+    <a class="card card-1" href="v1/" id="card-v1">
+      <div class="card-badge">
+        <span class="badge-dot"></span>
+        Version 1 · Classic
+      </div>
+      <div class="card-preview">
+        <canvas id="prev1" width="236" height="90"></canvas>
+      </div>
+      <div class="card-title">CLASSIC<br/>RUNNER</div>
+      <div class="card-desc">
+        The original mission.<br/>
+        Pure speed. Pure instinct.
+      </div>
+      <ul class="card-features">
+        <li>4 unique obstacle types</li>
+        <li>Dual dark / light themes</li>
+        <li>Trackpad + touch controls</li>
+        <li>Procedural 8-bit audio</li>
+        <li>Speed ramp up to ×20</li>
+      </ul>
+      <div class="card-btn">▶ LAUNCH MISSION</div>
+    </a>
+
+    <!-- V2 -->
+    <a class="card card-2" href="v2/" id="card-v2">
+      <div class="card-badge">
+        <span class="badge-dot"></span>
+        Version 2 · Thrilling
+      </div>
+      <div class="card-preview">
+        <canvas id="prev2" width="236" height="90"></canvas>
+      </div>
+      <div class="card-title">THRILLING<br/>JOURNEY</div>
+      <div class="card-desc">
+        5 levels. 8 obstacles.<br/>
+        Power-ups. Boss waves.
+      </div>
+      <ul class="card-features">
+        <li>3 lives + shield system</li>
+        <li>5-level journey mode</li>
+        <li>8 obstacle types</li>
+        <li>Power-ups: shield, slow, 2×</li>
+        <li>Combo multiplier × boss waves</li>
+      </ul>
+      <div class="card-btn">▶ BEGIN JOURNEY</div>
+    </a>
+
+  </div>
+
+  <div id="footer-nav">
+    <a class="footer-link" href="https://github.com/Jai-Bharath/Crew-Run" target="_blank">GitHub</a>
+    <span class="footer-sep">✦</span>
+    <a class="footer-link" href="https://github.com/Jai-Bharath/Crew-Run/blob/main/README.md" target="_blank">Docs</a>
+    <span class="footer-sep">✦</span>
+    <span class="footer-link" style="cursor:default;">MIT License</span>
+  </div>
+</div>
+
+<script>
+// ── CURSOR ──────────────────────────────────────────
+const cur=document.getElementById('cursor'),curDot=document.getElementById('cursor-dot');
+let mx=0,my=0;
+document.addEventListener('mousemove',e=>{
+  mx=e.clientX;my=e.clientY;
+  cur.style.left=(mx-9)+'px';cur.style.top=(my-9)+'px';
+  curDot.style.left=mx+'px';curDot.style.top=my+'px';
+});
+document.querySelectorAll('.card,.card-btn,.footer-link').forEach(el=>{
+  el.addEventListener('mouseenter',()=>document.body.classList.add('hovering'));
+  el.addEventListener('mouseleave',()=>document.body.classList.remove('hovering'));
+});
+
+// ── STARFIELD ──────────────────────────────────────
+const sc=document.getElementById('starfield');
+const sx=sc.getContext('2d');
+function resizeStar(){sc.width=window.innerWidth;sc.height=window.innerHeight;}
+resizeStar();window.addEventListener('resize',resizeStar);
+
+const STARS=Array.from({length:220},()=>({
+  x:Math.random()*window.innerWidth,
+  y:Math.random()*window.innerHeight,
+  r:Math.random()*1.6+.2,
+  sp:Math.random()*.3+.05,
+  tw:Math.random()*Math.PI*2,
+  twsp:Math.random()*.025+.008
+}));
+
+function animStars(){
+  requestAnimationFrame(animStars);
+  sx.clearRect(0,0,sc.width,sc.height);
+  STARS.forEach(s=>{
+    s.tw+=s.twsp;
+    const a=.15+Math.sin(s.tw)*.45;
+    sx.fillStyle=`rgba(180,215,255,${Math.max(0,a)})`;
+    sx.beginPath();sx.arc(s.x,s.y,s.r,0,Math.PI*2);sx.fill();
+  });
+}
+animStars();
+
+// ── CARD PREVIEWS ─────────────────────────────────
+// Animated mini-canvas previews for each card
+function drawCrewMini(c,x,y,color,visor,legF){
+  const bw=18,bh=26,top=y-bh;
+  c.fillStyle='#222';c.fillRect(x+bw-5,top+bh*.3,6,bh*.45);
+  c.fillStyle=color;
+  c.fillRect(x,top+bh*.35,bw,bh*.65);
+  c.fillRect(x+1,top,bw-2,bh*.45);
+  c.fillStyle=visor;c.globalAlpha=.9;
+  c.fillRect(x+2,top+bh*.06,bw-6,bh*.25);
+  c.globalAlpha=.25;c.fillStyle='#fff';
+  c.fillRect(x+3,top+bh*.08,bw*.3,bh*.1);
+  c.globalAlpha=1;
+  c.fillStyle=color;
+  if(legF===0){c.fillRect(x+2,y-6,6,7);c.fillRect(x+10,y-3,6,4);}
+  else{c.fillRect(x+2,y-3,6,4);c.fillRect(x+10,y-6,6,7);}
+}
+function drawAstMini(c,cx,cy,r,rot,color){
+  c.save();c.translate(cx,cy);c.rotate(rot);
+  c.fillStyle=color;c.shadowColor=color;c.shadowBlur=8;
+  c.beginPath();
+  for(let i=0;i<7;i++){
+    const a=(i/7)*Math.PI*2,j=.75+Math.sin(i*2.3+.4)*.22;
+    i===0?c.moveTo(Math.cos(a)*r*j,Math.sin(a)*r*j):c.lineTo(Math.cos(a)*r*j,Math.sin(a)*r*j);
+  }
+  c.closePath();c.fill();
+  c.globalAlpha=.25;c.fillStyle='#fff';c.beginPath();c.arc(-r*.2,-r*.3,r*.3,0,Math.PI*2);c.fill();
+  c.globalAlpha=1;c.restore();
+}
+
+// Preview 1 — classic: crewmate + asteroids
+(function(){
+  const cv=document.getElementById('prev1');
+  const c=cv.getContext('2d');
+  const W=cv.width,H=cv.height,G=H-18;
+  let t=0,legF=0,legT=0;
+  const obs=[{x:W+10,r:10,y:G,rot:0},{x:W+160,r:8,y:G,rot:1}];
+  function draw(){
+    requestAnimationFrame(draw);t+=.025;
+    c.clearRect(0,0,W,H);
+    const g=c.createLinearGradient(0,0,0,H);
+    g.addColorStop(0,'#050510');g.addColorStop(1,'#0d0d1e');
+    c.fillStyle=g;c.fillRect(0,0,W,H);
+    // ground
+    c.strokeStyle='rgba(0,212,255,.5)';c.lineWidth=1;
+    c.beginPath();c.moveTo(0,G);c.lineTo(W,G);c.stroke();
+    // stars
+    for(let i=0;i<18;i++){
+      const sx=(i*47+t*8)%W,sy=(i*31)%G*.8;
+      const a=.2+.4*Math.sin(t+i);
+      c.fillStyle=`rgba(200,230,255,${a})`;c.fillRect(sx,sy,1,1);
+    }
+    // obstacles
+    obs.forEach(o=>{
+      o.x-=1.8;o.rot+=.04;
+      if(o.x<-20)o.x=W+20;
+      drawAstMini(c,o.x,o.y-o.r,o.r,o.rot,'#a855f7');
+    });
+    // crew
+    legT+=.06;if(legT>1){legT=0;legF=1-legF;}
+    c.shadowColor='#ff4d6d';c.shadowBlur=10;
+    drawCrewMini(c,26,G,legF,'#ff4d6d','#00d4ff');
+    c.shadowBlur=0;
+  }
+  draw();
+})();
+
+// Preview 2 — thrilling: crewmate + wormhole + mine + boss asteroid
+(function(){
+  const cv=document.getElementById('prev2');
+  const c=cv.getContext('2d');
+  const W=cv.width,H=cv.height,G=H-18;
+  let t=0,legF=0,legT=0;
+  const obs=[
+    {x:W+10,type:'wormhole',spin:0},
+    {x:W+120,type:'mine',pulse:0},
+    {x:W+210,type:'ast',rot:0,r:10}
+  ];
+  // Power-up
+  let puX=W+70,puBob=0;
+
+  function draw(){
+    requestAnimationFrame(draw);t+=.025;
+    c.clearRect(0,0,W,H);
+    const g=c.createLinearGradient(0,0,0,H);
+    g.addColorStop(0,'#070510');g.addColorStop(1,'#0e0a1e');
+    c.fillStyle=g;c.fillRect(0,0,W,H);
+    // Nebula tint
+    c.fillStyle='rgba(100,0,180,.06)';c.fillRect(0,0,W,H);
+    // ground
+    c.strokeStyle='rgba(255,77,109,.5)';c.lineWidth=1;
+    c.beginPath();c.moveTo(0,G);c.lineTo(W,G);c.stroke();
+    // stars
+    for(let i=0;i<18;i++){
+      const sx=(i*53+t*10)%W,sy=(i*29)%G*.8;
+      const a=.15+.35*Math.sin(t+i*1.3);
+      c.fillStyle=`rgba(200,200,255,${a})`;c.fillRect(sx,sy,1,1);
+    }
+    // powerup
+    puX-=1.8;puBob+=.08;if(puX<-10)puX=W+20;
+    const puY=G-30+Math.sin(puBob)*4;
+    c.save();c.shadowColor='#ffd60a';c.shadowBlur=10;
+    c.fillStyle='rgba(255,214,10,.2)';c.beginPath();c.arc(puX,puY,8,0,Math.PI*2);c.fill();
+    c.font='12px serif';c.textAlign='center';c.textBaseline='middle';
+    c.fillText('🛡',puX,puY);c.restore();
+    // obstacles
+    obs.forEach(o=>{
+      o.x-=1.8;if(o.x<-30)o.x=W+20;
+      if(o.type==='wormhole'){
+        o.spin+=.04;
+        c.save();c.translate(o.x,G-14);
+        for(let i=0;i<3;i++){
+          c.globalAlpha=.12*(3-i);c.strokeStyle='#a855f7';c.lineWidth=1.5;
+          c.beginPath();c.arc(0,0,8+i*5,0,Math.PI*2);c.stroke();
+        }
+        c.globalAlpha=1;c.rotate(o.spin);
+        c.fillStyle='#7c3aed';c.shadowColor='#a855f7';c.shadowBlur=10;
+        for(let i=0;i<3;i++){c.rotate(Math.PI*2/3);c.beginPath();c.arc(5,0,3,0,Math.PI*2);c.fill();}
+        c.fillStyle='#000';c.beginPath();c.arc(0,0,3,0,Math.PI*2);c.fill();
+        c.restore();
+      } else if(o.type==='mine'){
+        o.pulse=(o.pulse||0)+.08;
+        const cy=G-9;
+        c.shadowColor='#ffd60a';c.shadowBlur=6+Math.sin(o.pulse)*4;
+        c.fillStyle='#ffd60a';c.beginPath();c.arc(o.x,cy,5,0,Math.PI*2);c.fill();
+        c.strokeStyle='#ffd60a';c.globalAlpha=.5+Math.sin(o.pulse)*.3;
+        c.lineWidth=1.5;c.beginPath();c.arc(o.x,cy,7.5,0,Math.PI*2);c.stroke();
+        c.globalAlpha=1;
+        for(let i=0;i<6;i++){
+          const a=(i/6)*Math.PI*2;c.strokeStyle='#ffd60a';c.lineWidth=1;c.globalAlpha=.6;
+          c.beginPath();c.moveTo(o.x+Math.cos(a)*4,cy+Math.sin(a)*4);
+          c.lineTo(o.x+Math.cos(a)*8,cy+Math.sin(a)*8);c.stroke();c.globalAlpha=1;
+        }
+        c.shadowBlur=0;
+      } else if(o.type==='ast'){
+        o.rot+=.05;
+        drawAstMini(c,o.x,G-o.r,o.r,o.rot,'#ff4d6d');
+      }
+    });
+    // crew w/ shield aura
+    legT+=.06;if(legT>1){legT=0;legF=1-legF;}
+    c.save();
+    c.globalAlpha=0.2+Math.sin(t*3)*.1;
+    c.strokeStyle='#00d4ff';c.lineWidth=1.5;c.shadowColor='#00d4ff';c.shadowBlur=12;
+    c.beginPath();c.arc(26+9,G-12,14,0,Math.PI*2);c.stroke();
+    c.restore();
+    c.shadowColor='#e11d48';c.shadowBlur=10;
+    drawCrewMini(c,26,G,legF,'#e11d48','#2563eb');
+    c.shadowBlur=0;
+  }
+  draw();
+})();
+
+// ── CARD CLICK TRANSITION ─────────────────────────
+const overlay=document.getElementById('transition');
+
+function goTo(href,e){
+  e.preventDefault();
+  const rect=e.currentTarget.getBoundingClientRect();
+  const cx=((rect.left+rect.right)/2)/window.innerWidth*100;
+  const cy=((rect.top+rect.bottom)/2)/window.innerHeight*100;
+  overlay.style.setProperty('--tx',cx+'%');
+  overlay.style.setProperty('--ty',cy+'%');
+  // Burst particles
+  spawnBurst(rect.left+rect.width/2,rect.top+rect.height/2,
+    e.currentTarget.classList.contains('card-1')?'#00d4ff':'#ff4d6d');
+  overlay.classList.add('active');
+  setTimeout(()=>{window.location.href=href;},520);
+}
+
+document.getElementById('card-v1').addEventListener('click',e=>goTo('v1/',e));
+document.getElementById('card-v2').addEventListener('click',e=>goTo('v2/',e));
+
+// ── PARTICLE BURST ────────────────────────────────
+function spawnBurst(x,y,color){
+  const count=18;
+  for(let i=0;i<count;i++){
+    const el=document.createElement('div');
+    el.className='burst';
+    const a=(i/count)*Math.PI*2;
+    const dist=40+Math.random()*60;
+    const size=3+Math.random()*4;
+    el.style.cssText=`
+      left:${x}px;top:${y}px;
+      width:${size}px;height:${size}px;
+      background:${color};
+      border-radius:50%;
+      box-shadow:0 0 ${size*2}px ${color};
+      transform:translate(-50%,-50%);
+      transition:transform .5s cubic-bezier(.23,1,.32,1),opacity .5s ease;
+    `;
+    document.body.appendChild(el);
+    requestAnimationFrame(()=>{
+      el.style.transform=`translate(calc(-50% + ${Math.cos(a)*dist}px),calc(-50% + ${Math.sin(a)*dist}px))`;
+      el.style.opacity='0';
+    });
+    setTimeout(()=>el.remove(),600);
+  }
+}
+
+// ── CARD 3D PARALLAX ─────────────────────────────
+document.querySelectorAll('.card').forEach(card=>{
+  card.addEventListener('mousemove',e=>{
+    const r=card.getBoundingClientRect();
+    const cx=(e.clientX-r.left)/r.width-.5;
+    const cy=(e.clientY-r.top)/r.height-.5;
+    card.style.transform=`translateY(-10px) rotateX(${cy*-8}deg) rotateY(${cx*8}deg) scale(1.02)`;
+  });
+  card.addEventListener('mouseleave',()=>{
+    card.style.transform='';
+  });
+});
+</script>
+</body>
+</html>
